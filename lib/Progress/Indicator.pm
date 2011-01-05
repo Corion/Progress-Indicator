@@ -100,18 +100,23 @@ sub new_indicator {
     my ($per_item,$position,$total,$handler,$get_position);
 
     $handler = $options->{type} || undef;
-
-    if (ref $item eq 'ARRAY') {
-        $handler ||= 'array';
-    } elsif (ref $item eq 'GLOB' or ref $item eq 'IO::Handle') {
-        $position = tell $item;
-        if ($position < 0 or ! -s $item) {
-	        $handler ||= 'unsized';
-	    } else {
-	        $handler ||= 'sized';
-	    };
-    } else {
-        $handler ||= 'unsized';
+    if (! $handler) {
+        if (ref $item eq 'ARRAY') {
+            $handler ||= 'array';
+        } elsif (ref $item eq 'GLOB' or ref $item eq 'IO::Handle') {
+            $position = tell $item;
+            if ($position < 0 or ! -s $item) {
+                $handler ||= 'unsized';
+            } else {
+                $handler ||= 'sized';
+            };
+        } elsif (ref $item eq 'SCALAR') {
+            $handler ||= 'sized';
+            $options->{position} = 0;
+            $options->{tell} = sub { $$item };
+        } else {
+            $handler ||= 'unsized';
+        };
     };
     if ($handler eq 'array') {
         # An array which we can size
